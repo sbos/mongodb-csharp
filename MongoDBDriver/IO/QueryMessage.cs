@@ -53,6 +53,14 @@ namespace MongoDB.Driver.IO
 			get { return returnFieldSelector; }
 			set { returnFieldSelector = value; }
 		}
+
+        private BsonDocument _OrderBy;
+
+        public BsonDocument OrderBy
+        {
+            get { return _OrderBy; }
+            set { _OrderBy = value; }
+        }
 		
 #endregion
 		

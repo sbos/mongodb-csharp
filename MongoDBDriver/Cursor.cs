@@ -17,10 +17,9 @@ namespace MongoDB.Driver
 			get {return id;}
 		}		
 		
-		private String fullCollectionName;
 		public string FullCollectionName {
-			get {return fullCollectionName;}
-			set {fullCollectionName = value;}
+            get { return _QueryMessage.FullCollectionName; }
+            set { _QueryMessage.FullCollectionName = value; }
 		}
 		
 		private String collName;
@@ -31,20 +30,18 @@ namespace MongoDB.Driver
 		
 		private Document spec;
 		public Document Spec{
-			get {return spec;}
-			set {spec = value;}
+            get { return spec; }
+            set { spec = value; }
 		}
 		
-		private int limit;
 		public int Limit{
-			get {return limit;}
-			set {limit = value;}
+            get { return _QueryMessage.NumberToReturn; }
+            set { _QueryMessage.NumberToReturn = value; }
 		}
 		
-		private int skip;
 		public int Skip{
-			get {return skip;}
-			set {skip = value;}
+			get {return _QueryMessage.NumberToSkip;}
+            set { _QueryMessage.NumberToSkip = value; }
 		}
 
 		private Document fields;
@@ -57,18 +54,40 @@ namespace MongoDB.Driver
 		public bool Modifiable{
 			get {return modifiable;}
 		}
+
+        private bool _Special;
+
+        private QueryMessage _QueryMessage;
 		
 		private ReplyMessage reply;
+
+        private Document _OrderBy;
 		
 		public Cursor(Connection conn, String fullCollectionName, Document spec, int limit, int skip, Document fields){
+
+            _QueryMessage = new QueryMessage();
+
+            if (spec == null) spec = new Document();
+            _QueryMessage.FullCollectionName = fullCollectionName;
+            _QueryMessage.NumberToReturn = limit;
+            _QueryMessage.NumberToSkip = skip;
+
 			this.connection = conn;
-			this.FullCollectionName = fullCollectionName;
-			if(spec == null)spec = new Document();
-			this.Spec = spec;
-			this.Limit = limit;
-			this.Skip = skip;
-			this.Fields = fields;
+            this.fields = fields;
+            this.spec = spec;
+
+            _Special = false;
+            _OrderBy = null;
 		}
+
+        public void Sort(Document orderBy)
+        {
+            if (orderBy == null)
+                throw new ArgumentNullException("orderBy");
+
+            _OrderBy = orderBy;
+            _Special = true;
+        }
 		
 		public IEnumerable<Document> Documents{
 			get{
@@ -100,13 +119,23 @@ namespace MongoDB.Driver
 				}
 			}			
 		}
+
+        private QueryMessage BuildQueryMessage()
+        {
+            Document query = spec;
+            if (_Special)
+            {
+                query = new Document();
+                query.Add("query", spec);
+                query.Add("orderby", _OrderBy);
+            }
+            _QueryMessage.Query = BsonConvert.From(query);
+            if (fields != null) _QueryMessage.ReturnFieldSelector = BsonConvert.From(fields);
+            return _QueryMessage;
+        }
 		
 		private void RetrieveData(){
-			QueryMessage query = new QueryMessage();
-			query.FullCollectionName = this.FullCollectionName;
-			query.Query = BsonConvert.From(this.Spec);
-			query.NumberToReturn = this.Limit;
-			query.NumberToSkip = this.Skip;
+            QueryMessage query = BuildQueryMessage();
 			if(this.Fields != null){
 				query.ReturnFieldSelector = BsonConvert.From(this.Fields);
 			}

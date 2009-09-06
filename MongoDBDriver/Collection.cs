@@ -15,7 +15,12 @@ namespace MongoDB.Driver
 	/// </summary>
 	public class Collection
 	{
-		private Connection connection;
+        private Connection connection;
+
+        public Connection Connection
+        {
+            get { return connection; }
+        }
 		
 		private string name;		
 		public string Name {
@@ -47,7 +52,7 @@ namespace MongoDB.Driver
 			this.connection = conn;
 			this.dbName = dbName;
 		}
-				
+	
 		public Document FindOne(Document spec){
 			Cursor cur = this.Find(spec, -1,0,null);
 			foreach(Document doc in cur.Documents){
@@ -95,22 +100,22 @@ namespace MongoDB.Driver
 		}
 		
 		public void Insert(Document doc){
-			Document[] docs = new Document[]{doc,};
-			this.Insert(docs);
+			Document[] docs = new Document[]{doc};
+			this.Insert(docs, 1);
 		}
 		
-		public void Insert(List<Document> docs){
-			this.Insert(docs.ToArray());
+		public void Insert(IList<Document> docs){
+			this.Insert(docs, docs.Count);
 		}
 		
-		public void Insert(Document[] docs){
+		public void Insert(IEnumerable<Document> docs, int length){
 			InsertMessage im = new InsertMessage();
 			im.FullCollectionName = this.FullName;
-			List<BsonDocument> bdocs = new List<BsonDocument>(docs.Length);
-			foreach(Document doc in docs){
-				bdocs.Add(BsonConvert.From(doc));
-			}
-			im.BsonDocuments = bdocs.ToArray();
+            BsonDocument[] bdocs = new BsonDocument[length];
+            int i = 0;
+			foreach(Document doc in docs)
+                bdocs[i++] = BsonConvert.From(doc);
+			im.BsonDocuments = bdocs;
 			this.connection.SendMessage(im);
 		}
 		

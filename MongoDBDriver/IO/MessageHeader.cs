@@ -55,7 +55,7 @@ namespace MongoDB.Driver.IO
 		}
 		
 		public override String ToString(){
-			return "length:" + this.messageLength + " requestId:" + this.requestId + " responseTo:" + this.responseTo + " opCode:" + this.opCode;
+            return "length:" + this.messageLength + " requestId:" + this.requestId + " responseTo:" + this.responseTo + " opCode:" + this.opCode;
 		}
 		
 	}
